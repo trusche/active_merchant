@@ -1,0 +1,12 @@
+en:
+  activemerchant:
+    errors:
+      empty: cannot be empty
+      required: is required
+      invalid_month: is not a valid month
+      expired: is expired
+      invalid_year: is not a valid year
+      invalid: is invalid
+      invalid_credit_card_number: is not a valid credit card number
+      does_not_match_card_number: does not match the card number
+      should_be_x_digits: "should be %{num} digits"

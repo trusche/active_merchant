@@ -322,44 +322,46 @@ module ActiveMerchant #:nodoc:
         errors = []
 
         if self.class.requires_name?
-          errors << [:first_name, "cannot be empty"] if first_name.blank?
-          errors << [:last_name,  "cannot be empty"] if last_name.blank?
+          errors << [:first_name, :empty] if first_name.blank?
+          errors << [:last_name,  :empty] if last_name.blank?
         end
 
         if(empty?(month) || empty?(year))
-          errors << [:month, "is required"] if empty?(month)
-          errors << [:year,  "is required"] if empty?(year)
+          errors << [:month, :required] if empty?(month)
+          errors << [:year,  :required] if empty?(year)
         else
-          errors << [:month, "is not a valid month"] if !valid_month?(month)
+          errors << [:month, :invalid_month] if !valid_month?(month)
 
-          if expired?
-            errors << [:year,  "expired"]
+          if !well_formed_expiry_year?(year)
+            errors << [:year, :should_be_x_digits, num: 4]
+          elsif expired?
+            errors << [:year,  :expired]
           else
-            errors << [:year,  "is not a valid year"]  if !valid_expiry_year?(year)
+            errors << [:year,  :invalid_year]  if !valid_expiry_year?(year)
           end
         end
 
-        errors
+        i18n_errors(errors)
       end
 
       def validate_card_brand_and_number #:nodoc:
         errors = []
 
         if !empty?(brand)
-          errors << [:brand, "is invalid"]  if !CreditCard.card_companies.keys.include?(brand)
+          errors << [:brand, :invalid]  if !CreditCard.card_companies.keys.include?(brand)
         end
 
         if empty?(number)
-          errors << [:number, "is required"]
+          errors << [:number, :required]
         elsif !CreditCard.valid_number?(number)
-          errors << [:number, "is not a valid credit card number"]
+          errors << [:number, :invalid_credit_card_number]
         end
 
         if errors.empty?
-          errors << [:brand, "does not match the card number"] if !CreditCard.matching_brand?(number, brand)
+          errors << [:brand, :does_not_match_card_number] if !CreditCard.matching_brand?(number, brand)
         end
 
-        errors
+        i18n_errors(errors)
       end
 
       def validate_verification_value #:nodoc:
@@ -367,12 +369,12 @@ module ActiveMerchant #:nodoc:
 
         if verification_value?
           unless valid_card_verification_value?(verification_value, brand)
-            errors << [:verification_value, "should be #{card_verification_value_length(brand)} digits"]
+            errors << [:verification_value, :should_be_x_digits, num: card_verification_value_length(brand) ]
           end
         elsif requires_verification_value?
-          errors << [:verification_value, "is required"]
+          errors << [:verification_value, :required]
         end
-        errors
+        i18n_errors(errors)
       end
 
       def validate_switch_or_solo_attributes #:nodoc:
@@ -384,16 +386,20 @@ module ActiveMerchant #:nodoc:
 
           if((!valid_start_month || !valid_start_year) && !valid_issue_number?(issue_number))
             if empty?(issue_number)
-              errors << [:issue_number, "cannot be empty"]
-              errors << [:start_month, "is invalid"] if !valid_start_month
-              errors << [:start_year,  "is invalid"] if !valid_start_year
+              errors << [:issue_number, :empty]
+              errors << [:start_month, :invalid] if !valid_start_month
+              errors << [:start_year,  :invalid] if !valid_start_year
             else
-              errors << [:issue_number, "is invalid"] if !valid_issue_number?(issue_number)
+              errors << [:issue_number, :invalid] if !valid_issue_number?(issue_number)
             end
           end
         end
 
-        errors
+        i18n_errors(errors)
+      end
+
+      def i18n_errors(errors=[])
+        errors.map { |a| [a.shift, I18n.t("activemerchant.errors.#{a.shift}", a.shift)] }
       end
 
       class ExpiryDate #:nodoc:

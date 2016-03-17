@@ -64,3 +64,4 @@ module ActiveMerchant
 end
 
 I18n.enforce_available_locales = false
+I18n.load_path << File.dirname(__FILE__) + '/active_merchant/locale/en.yml'
